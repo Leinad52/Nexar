@@ -1,0 +1,14 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+  <section class="center-panel">
+    <form class="panel form-panel" method="post">
+      {% csrf_token %}
+      <span class="eyebrow">Acesso restrito</span>
+      <h1>Painel Nexar</h1>
+      {{ form.password.label_tag }}
+      {{ form.password }}
+      <button type="submit">Entrar</button>
+    </form>
+  </section>
+{% endblock %}

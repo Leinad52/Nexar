@@ -1,0 +1,124 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+  <section class="hero">
+    <div>
+      <span class="eyebrow">Consulta por placa</span>
+      <h1>Busque um carro e veja as pecas compativeis.</h1>
+      <p>Digite a placa para identificar o modelo e carregar os itens vinculados no catalogo Nexar.</p>
+    </div>
+
+    <form class="plate-card" method="get">
+      {{ form.plate.label_tag }}
+      <div class="search-row">
+        {{ form.plate }}
+        <button type="submit">Buscar</button>
+      </div>
+      {% if form.plate.errors %}
+        <small class="field-error">{{ form.plate.errors.0 }}</small>
+      {% else %}
+        <small>Teste: ABC1D23, BRA2E19 ou NXR0A01</small>
+      {% endif %}
+    </form>
+  </section>
+
+  {% if vehicle %}
+    <section class="results">
+      <article class="panel vehicle">
+        <span class="eyebrow">Veiculo encontrado</span>
+        <h2>{{ vehicle.brand }} {{ vehicle.model }}</h2>
+        <dl>
+          <div><dt>Placa</dt><dd>{{ vehicle.plate }}</dd></div>
+          <div><dt>Versao</dt><dd>{{ vehicle.version }}</dd></div>
+          <div><dt>Ano</dt><dd>{{ vehicle.year }}</dd></div>
+          <div><dt>Motor</dt><dd>{{ vehicle.engine|default:'Nao informado' }}</dd></div>
+          <div><dt>Combustivel</dt><dd>{{ vehicle.fuel|default:'Nao informado' }}</dd></div>
+          <div><dt>FIPE</dt><dd>{{ vehicle.fipe_code|default:'Nao vinculado' }}</dd></div>
+        </dl>
+      </article>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>Pecas compativeis</h2>
+          <span>{{ parts|length }} item(ns)</span>
+        </div>
+        {% if applications %}
+          <p class="match-note">
+            Compatibilidade encontrada em {{ applications|length }} modelo(s) cadastrado(s).
+          </p>
+        {% endif %}
+        {% if parts %}
+          <input
+            class="parts-search"
+            type="search"
+            placeholder="Pesquisar peca, codigo, marca ou categoria"
+            data-parts-search
+            autocomplete="off"
+          >
+          <small class="search-hint" data-parts-count></small>
+          <div class="part-list">
+            {% for part in parts %}
+              <article class="part-row" data-part-row>
+                <div>
+                  <span class="eyebrow">{{ part.category_label }}</span>
+                  <h3>{{ part.name }}</h3>
+                  {% if part.notes %}<p>{{ part.notes }}</p>{% endif %}
+                </div>
+                <div class="code-box">
+                  <span>{{ part.brand|default:'Sem marca' }}</span>
+                  <strong>{{ part.code }}</strong>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty">Esse modelo ainda nao tem pecas vinculadas. Cadastre o modelo e marque as pecas no painel.</p>
+        {% endif %}
+      </section>
+    </section>
+  {% endif %}
+  <script>
+    const plateInput = document.querySelector('[data-plate-input]');
+    if (plateInput) {
+      plateInput.addEventListener('input', () => {
+        plateInput.value = plateInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      });
+    }
+
+    const partsSearch = document.querySelector('[data-parts-search]');
+    const partsCount = document.querySelector('[data-parts-count]');
+    const partRows = Array.from(document.querySelectorAll('[data-part-row]'));
+
+    if (partsSearch && partRows.length) {
+      const normalize = (value) =>
+        value
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+
+      function updatePartsList() {
+        const query = normalize(partsSearch.value.trim());
+        let visible = 0;
+
+        partRows.forEach((row) => {
+          const matches = !query || normalize(row.textContent).includes(query);
+          row.style.display = matches ? '' : 'none';
+          if (matches) visible += 1;
+        });
+
+        if (partsCount) {
+          partsCount.textContent = `${visible} peca(s) encontrada(s)`;
+        }
+      }
+
+      partsSearch.addEventListener('input', updatePartsList);
+      partsSearch.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          updatePartsList();
+        }
+      });
+      updatePartsList();
+    }
+  </script>
+{% endblock %}

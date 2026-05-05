@@ -1,0 +1,81 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+  <section class="center-panel wide">
+    <form class="panel form-panel" method="post">
+      {% csrf_token %}
+      <span class="eyebrow">Painel</span>
+      <h1>{{ title }}</h1>
+      {% for field in form %}
+        <p>
+          {{ field.label_tag }}
+          {% if field.name == 'compatible_vehicles' %}
+            <input
+              class="model-search"
+              type="search"
+              placeholder="Pesquisar modelo, marca, versao ou motor"
+              data-model-search
+              autocomplete="off"
+            >
+            <small class="search-hint" data-model-count></small>
+          {% endif %}
+          {{ field }}
+          {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+          {% for error in field.errors %}
+            <small class="field-error">{{ error }}</small>
+          {% endfor %}
+        </p>
+      {% endfor %}
+      <div class="button-row">
+        <a class="button ghost" href="{% url 'staff_dashboard' %}">Cancelar</a>
+        <button type="submit">Salvar</button>
+      </div>
+    </form>
+  </section>
+  <script>
+    const modelSearch = document.querySelector('[data-model-search]');
+    const modelCount = document.querySelector('[data-model-count]');
+    const modelList = document.querySelector('#id_compatible_vehicles');
+
+    if (modelSearch && modelList) {
+      const items = Array.from(modelList.children);
+      const normalize = (value) =>
+        value
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+
+      function updateModelList() {
+        const query = normalize(modelSearch.value.trim());
+        let visible = 0;
+        let firstVisible = null;
+
+        items.forEach((item) => {
+          const label = normalize(item.textContent);
+          const matches = !query || label.includes(query);
+          item.style.display = matches ? '' : 'none';
+          item.classList.toggle('search-match', matches && Boolean(query));
+          if (matches) visible += 1;
+          if (matches && !firstVisible) firstVisible = item;
+        });
+
+        if (modelCount) {
+          modelCount.textContent = `${visible} modelo(s) encontrado(s)`;
+        }
+
+        if (firstVisible) {
+          firstVisible.scrollIntoView({ block: 'nearest' });
+        }
+      }
+
+      modelSearch.addEventListener('input', updateModelList);
+      modelSearch.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          updateModelList();
+        }
+      });
+      updateModelList();
+    }
+  </script>
+{% endblock %}

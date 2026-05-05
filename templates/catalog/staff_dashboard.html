@@ -1,0 +1,87 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+  <section class="dashboard-head">
+    <div>
+      <span class="eyebrow">Cadastro</span>
+      <h1>Painel de pecas e compatibilidades</h1>
+    </div>
+    <div class="button-row">
+      <a class="button" href="{% url 'category_create' %}">Nova categoria</a>
+      <a class="button" href="{% url 'vehicle_create' %}">Novo modelo</a>
+      <a class="button primary" href="{% url 'part_create' %}">Nova peca</a>
+    </div>
+  </section>
+
+  <section class="admin-grid three-columns">
+    <article class="panel">
+      <div class="section-title">
+        <h2>Categorias</h2>
+        <span>{{ categories|length }}</span>
+      </div>
+      <div class="table-list">
+        {% for category in categories %}
+          <div class="table-row with-action">
+            <div>
+              <strong>{{ category.name }}</strong>
+              <span>{{ category.slug }}</span>
+            </div>
+            <div class="row-actions">
+              <a href="{% url 'category_edit' category.pk %}">Editar</a>
+              <a class="danger-link" href="{% url 'category_delete' category.pk %}">Excluir</a>
+            </div>
+          </div>
+        {% empty %}
+          <p class="empty">Nenhuma categoria cadastrada.</p>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="section-title">
+        <h2>Modelos</h2>
+        <span>{{ vehicles|length }}</span>
+      </div>
+      <div class="table-list">
+        {% for vehicle in vehicles %}
+          <div class="table-row with-action">
+            <div>
+              <strong>{{ vehicle.brand }} {{ vehicle.model }}</strong>
+              <span>{{ vehicle.version }} | {{ vehicle.year }} | {{ vehicle.engine|default:'motor nao informado' }}</span>
+            </div>
+            <div class="row-actions">
+              <a href="{% url 'vehicle_edit' vehicle.pk %}">Editar</a>
+              <a class="danger-link" href="{% url 'vehicle_delete' vehicle.pk %}">Excluir</a>
+            </div>
+          </div>
+        {% empty %}
+          <p class="empty">Nenhum modelo cadastrado.</p>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="section-title">
+        <h2>Pecas</h2>
+        <span>{{ parts|length }}</span>
+      </div>
+      <div class="table-list">
+        {% for part in parts %}
+          <div class="table-row with-action">
+            <div>
+              <strong>{{ part.brand }} {{ part.code }}</strong>
+              <span>{{ part.name }} | {{ part.category_label }}</span>
+              <small>{{ part.compatible_vehicles.count }} modelo(s) vinculado(s)</small>
+            </div>
+            <div class="row-actions">
+              <a href="{% url 'part_edit' part.pk %}">Editar</a>
+              <a class="danger-link" href="{% url 'part_delete' part.pk %}">Excluir</a>
+            </div>
+          </div>
+        {% empty %}
+          <p class="empty">Nenhuma peca cadastrada.</p>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+  <section class="center-panel">
+    <form class="panel form-panel" method="post">
+      {% csrf_token %}
+      <span class="eyebrow">Confirmar exclusao</span>
+      <h1>{{ title }}</h1>
+      <p class="delete-copy">
+        Tem certeza que deseja excluir este {{ label }}?
+      </p>
+      <div class="delete-target">{{ object }}</div>
+      <div class="button-row">
+        <a class="button ghost" href="{% url 'staff_dashboard' %}">Cancelar</a>
+        <button class="danger-button" type="submit">Excluir</button>
+      </div>
+    </form>
+  </section>
+{% endblock %}

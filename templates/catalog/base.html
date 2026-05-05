@@ -1,0 +1,33 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nexar</title>
+    <link rel="stylesheet" href="{% static 'catalog/styles.css' %}">
+  </head>
+  <body>
+    <main class="shell">
+      <nav class="topbar">
+        <a class="brand" href="{% url 'home' %}">Nexar</a>
+        <div class="nav-actions">
+          <a href="{% url 'staff_dashboard' %}">Painel</a>
+          {% if request.session.staff_unlocked %}
+            <a href="{% url 'staff_logout' %}">Sair</a>
+          {% endif %}
+        </div>
+      </nav>
+
+      {% if messages %}
+        <div class="messages">
+          {% for message in messages %}
+            <p class="message {{ message.tags }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
