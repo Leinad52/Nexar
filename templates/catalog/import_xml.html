@@ -1,0 +1,37 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+  <section class="center-panel wide">
+    <form class="panel form-panel" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <span class="eyebrow">Importacao</span>
+      <h1>Importar pecas por XML</h1>
+      <p class="delete-copy">
+        Envie um XML de NF-e. O Nexar vai importar somente os produtos da nota e ignorar dados de loja, cliente, CNPJ e impostos.
+      </p>
+      {{ form.as_p }}
+      <div class="button-row">
+        <a class="button ghost" href="{% url 'staff_dashboard' %}">Cancelar</a>
+        <button type="submit">Importar</button>
+      </div>
+    </form>
+
+    {% if result %}
+      <section class="panel import-result">
+        <h2>Resultado da importacao</h2>
+        <dl>
+          <div><dt>Criadas</dt><dd>{{ result.created }}</dd></div>
+          <div><dt>Atualizadas</dt><dd>{{ result.updated }}</dd></div>
+          <div><dt>Ignoradas</dt><dd>{{ result.skipped }}</dd></div>
+        </dl>
+        {% if result.errors %}
+          <div class="table-list">
+            {% for error in result.errors %}
+              <p class="message error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </section>
+    {% endif %}
+  </section>
+{% endblock %}

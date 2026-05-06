@@ -1,0 +1,32 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+  <section class="dashboard-head">
+    <div>
+      <span class="eyebrow">Painel</span>
+      <h1>{{ title }}</h1>
+    </div>
+    <div class="button-row">
+      <a class="button ghost" href="{% url 'staff_dashboard' %}">Voltar</a>
+      {% block actions %}{% endblock %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <form class="list-search" method="get">
+      <input
+        type="search"
+        name="q"
+        value="{{ query }}"
+        placeholder="{{ search_placeholder }}"
+        autocomplete="off"
+      >
+      <button type="submit">Buscar</button>
+      {% if query %}
+        <a class="button ghost" href="{{ request.path }}">Limpar</a>
+      {% endif %}
+    </form>
+
+    {% block list_content %}{% endblock %}
+  </section>
+{% endblock %}

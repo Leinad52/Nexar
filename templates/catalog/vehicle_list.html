@@ -1,0 +1,27 @@
+{% extends 'catalog/list_base.html' %}
+
+{% block actions %}
+  <a class="button primary" href="{% url 'vehicle_create' %}">Novo modelo</a>
+{% endblock %}
+
+{% block list_content %}
+  <div class="table-list">
+    {% for vehicle in vehicles %}
+      <div class="table-row with-action">
+        <div>
+          <strong>{{ vehicle.brand }} {{ vehicle.model }}</strong>
+          <span>{{ vehicle.version }} | {{ vehicle.year }} | {{ vehicle.engine|default:'motor nao informado' }}</span>
+          {% if vehicle.fuel or vehicle.fipe_code %}
+            <small>{{ vehicle.fuel|default:'combustivel nao informado' }} | FIPE: {{ vehicle.fipe_code|default:'nao vinculada' }}</small>
+          {% endif %}
+        </div>
+        <div class="row-actions">
+          <a href="{% url 'vehicle_edit' vehicle.pk %}">Editar</a>
+          <a class="danger-link" href="{% url 'vehicle_delete' vehicle.pk %}">Excluir</a>
+        </div>
+      </div>
+    {% empty %}
+      <p class="empty">Nenhum modelo encontrado.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

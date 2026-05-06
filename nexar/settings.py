@@ -17,6 +17,21 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def load_dotenv(path):
+    if not path.exists():
+        return
+
+    for line in path.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_dotenv(BASE_DIR / '.env')
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -26,7 +41,7 @@ SECRET_KEY = 'django-insecure-i55h3)@fs-s^j9afl_!_cf$j5ucm9vxn*#%dvs%(lzlj&hwbp#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "192.168.100.42"]
 
 
 # Application definition
@@ -120,6 +135,7 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 NEXAR_STAFF_PASSWORD = os.environ.get('NEXAR_STAFF_PASSWORD', '34260120')
+NEXAR_PLATE_API_PROVIDER = os.environ.get('NEXAR_PLATE_API_PROVIDER', 'placafipeonline')
 NEXAR_PLATE_API_URL = os.environ.get('NEXAR_PLATE_API_URL', '')
 NEXAR_PLATE_API_TOKEN = os.environ.get('NEXAR_PLATE_API_TOKEN', '')
 

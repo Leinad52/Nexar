@@ -1,0 +1,29 @@
+{% extends 'catalog/list_base.html' %}
+
+{% block actions %}
+  <a class="button" href="{% url 'import_parts_xml' %}">Importar XML</a>
+  <a class="button primary" href="{% url 'part_create' %}">Nova peca</a>
+{% endblock %}
+
+{% block list_content %}
+  <div class="table-list">
+    {% for part in parts %}
+      <div class="table-row with-action">
+        <div>
+          <strong>{{ part.brand }} {{ part.code }}</strong>
+          <span>{{ part.name }} | {{ part.category_label }}</span>
+          {% if part.barcode or part.ncm %}
+            <small>EAN: {{ part.barcode|default:'nao informado' }} | NCM: {{ part.ncm|default:'nao informado' }}</small>
+          {% endif %}
+          <small>{{ part.compatible_vehicles.count }} modelo(s) vinculado(s)</small>
+        </div>
+        <div class="row-actions">
+          <a href="{% url 'part_edit' part.pk %}">Editar</a>
+          <a class="danger-link" href="{% url 'part_delete' part.pk %}">Excluir</a>
+        </div>
+      </div>
+    {% empty %}
+      <p class="empty">Nenhuma peca encontrada.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

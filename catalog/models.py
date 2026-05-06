@@ -39,6 +39,12 @@ class Part(models.Model):
     name = models.CharField('nome', max_length=140)
     brand = models.CharField('marca da peca', max_length=100, blank=True)
     code = models.CharField('codigo', max_length=80)
+    barcode = models.CharField('codigo de barras', max_length=40, blank=True)
+    ncm = models.CharField('NCM', max_length=20, blank=True)
+    unit = models.CharField('unidade', max_length=10, blank=True)
+    last_purchase_quantity = models.DecimalField('ultima quantidade comprada', max_digits=12, decimal_places=4, null=True, blank=True)
+    last_purchase_unit_price = models.DecimalField('ultimo custo unitario', max_digits=12, decimal_places=4, null=True, blank=True)
+    last_purchase_total = models.DecimalField('ultimo total comprado', max_digits=12, decimal_places=2, null=True, blank=True)
     notes = models.TextField('observacoes', blank=True)
     compatible_vehicles = models.ManyToManyField(
         Vehicle,

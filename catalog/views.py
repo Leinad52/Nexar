@@ -1,11 +1,15 @@
+import re
+
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from .forms import CategoryForm, PartForm, PlateSearchForm, StaffPasswordForm, VehicleForm
+from .forms import CategoryForm, PartForm, PlateSearchForm, StaffPasswordForm, VehicleForm, XmlImportForm
 from .models import Category, Part, Vehicle
 from .services import lookup_plate
+from .xml_importer import import_nfe_xml
 
 
 def home(request):
@@ -34,6 +38,12 @@ def home(request):
 
 def find_vehicle_applications(vehicle):
     matches = Vehicle.objects.filter(brand__iexact=vehicle.brand, model__iexact=vehicle.model)
+    if not matches.exists():
+        matches = Vehicle.objects.filter(brand__iexact=vehicle.brand, model__icontains=vehicle.model)
+    if not matches.exists():
+        matches = Vehicle.objects.filter(brand__iexact=vehicle.brand, model__iregex=first_model_word(vehicle.model))
+    if not matches.exists():
+        matches = Vehicle.objects.filter(brand__iexact=vehicle.brand)
 
     if vehicle.version:
         exact_version = matches.filter(version__iexact=vehicle.version)
@@ -47,6 +57,11 @@ def find_vehicle_applications(vehicle):
                 return list(partial)
 
     return list(matches)
+
+
+def first_model_word(value):
+    words = [word for word in value.replace('-', ' ').split() if len(word) >= 3]
+    return re.escape(words[0] if words else value)
 
 
 def staff_login(request):
@@ -86,7 +101,33 @@ def staff_dashboard(request):
     return render(
         request,
         'catalog/staff_dashboard.html',
-        {'categories': categories, 'vehicles': vehicles, 'parts': parts},
+        {
+            'categories': categories[:3],
+            'vehicles': vehicles[:3],
+            'parts': parts[:3],
+            'category_count': categories.count(),
+            'vehicle_count': vehicles.count(),
+            'part_count': parts.count(),
+        },
+    )
+
+
+@staff_required
+def category_list(request):
+    query = request.GET.get('q', '').strip()
+    categories = Category.objects.all()
+    if query:
+        categories = categories.filter(Q(name__icontains=query) | Q(slug__icontains=query))
+
+    return render(
+        request,
+        'catalog/category_list.html',
+        {
+            'categories': categories,
+            'query': query,
+            'title': 'Categorias',
+            'search_placeholder': 'Pesquisar categoria ou identificador',
+        },
     )
 
 
@@ -126,6 +167,74 @@ def category_delete(request, pk):
         request,
         'catalog/confirm_delete.html',
         {'object': category, 'title': 'Excluir categoria', 'label': 'categoria'},
+    )
+
+
+@staff_required
+def import_parts_xml(request):
+    form = XmlImportForm(request.POST or None, request.FILES or None)
+    result = None
+
+    if request.method == 'POST' and form.is_valid():
+        result = import_nfe_xml(form.cleaned_data['xml_file'])
+        messages.success(
+            request,
+            f'Importacao concluida: {result.created} criada(s), {result.updated} atualizada(s), {result.skipped} ignorada(s).',
+        )
+
+    return render(request, 'catalog/import_xml.html', {'form': form, 'result': result})
+
+
+@staff_required
+def vehicle_list(request):
+    query = request.GET.get('q', '').strip()
+    vehicles = Vehicle.objects.all()
+    if query:
+        vehicles = vehicles.filter(
+            Q(brand__icontains=query)
+            | Q(model__icontains=query)
+            | Q(version__icontains=query)
+            | Q(engine__icontains=query)
+            | Q(fuel__icontains=query)
+            | Q(fipe_code__icontains=query)
+        )
+
+    return render(
+        request,
+        'catalog/vehicle_list.html',
+        {
+            'vehicles': vehicles,
+            'query': query,
+            'title': 'Modelos',
+            'search_placeholder': 'Pesquisar marca, modelo, versao, motor ou FIPE',
+        },
+    )
+
+
+@staff_required
+def part_list(request):
+    query = request.GET.get('q', '').strip()
+    parts = Part.objects.prefetch_related('compatible_vehicles')
+    if query:
+        parts = parts.filter(
+            Q(category__icontains=query)
+            | Q(name__icontains=query)
+            | Q(brand__icontains=query)
+            | Q(code__icontains=query)
+            | Q(barcode__icontains=query)
+            | Q(ncm__icontains=query)
+            | Q(notes__icontains=query)
+        )
+
+    return render(
+        request,
+        'catalog/part_list.html',
+        {
+            'parts': parts,
+            'query': query,
+            'title': 'Pecas',
+            'search_placeholder': 'Pesquisar peca, codigo, EAN, NCM ou observacao',
+        },
     )
 
 

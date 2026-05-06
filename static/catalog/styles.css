@@ -106,6 +106,13 @@ button {
   font-weight: 800;
 }
 
+.see-more {
+  display: inline-flex;
+  margin-top: 14px;
+  color: #173d2a;
+  font-weight: 850;
+}
+
 .hero {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
@@ -247,6 +254,13 @@ dd {
   gap: 12px;
 }
 
+.list-search {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
 .part-row,
 .table-row {
   padding: 16px;
@@ -328,6 +342,11 @@ dd {
   font-weight: 850;
 }
 
+.import-result {
+  width: min(720px, 100%);
+  margin-top: 18px;
+}
+
 .form-panel label {
   display: block;
   margin-bottom: 6px;
@@ -383,6 +402,7 @@ dd {
   .admin-grid,
   .admin-grid.three-columns,
   .search-row,
+  .list-search,
   dl {
     grid-template-columns: 1fr;
   }

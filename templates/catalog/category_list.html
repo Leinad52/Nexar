@@ -1,0 +1,24 @@
+{% extends 'catalog/list_base.html' %}
+
+{% block actions %}
+  <a class="button primary" href="{% url 'category_create' %}">Nova categoria</a>
+{% endblock %}
+
+{% block list_content %}
+  <div class="table-list">
+    {% for category in categories %}
+      <div class="table-row with-action">
+        <div>
+          <strong>{{ category.name }}</strong>
+          <span>{{ category.slug }}</span>
+        </div>
+        <div class="row-actions">
+          <a href="{% url 'category_edit' category.pk %}">Editar</a>
+          <a class="danger-link" href="{% url 'category_delete' category.pk %}">Excluir</a>
+        </div>
+      </div>
+    {% empty %}
+      <p class="empty">Nenhuma categoria encontrada.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -9,6 +9,7 @@
     <div class="button-row">
       <a class="button" href="{% url 'category_create' %}">Nova categoria</a>
       <a class="button" href="{% url 'vehicle_create' %}">Novo modelo</a>
+      <a class="button" href="{% url 'import_parts_xml' %}">Importar XML</a>
       <a class="button primary" href="{% url 'part_create' %}">Nova peca</a>
     </div>
   </section>
@@ -17,7 +18,7 @@
     <article class="panel">
       <div class="section-title">
         <h2>Categorias</h2>
-        <span>{{ categories|length }}</span>
+        <span>{{ category_count }}</span>
       </div>
       <div class="table-list">
         {% for category in categories %}
@@ -35,12 +36,15 @@
           <p class="empty">Nenhuma categoria cadastrada.</p>
         {% endfor %}
       </div>
+      {% if category_count > 3 %}
+        <a class="see-more" href="{% url 'category_list' %}">Ver mais categorias</a>
+      {% endif %}
     </article>
 
     <article class="panel">
       <div class="section-title">
         <h2>Modelos</h2>
-        <span>{{ vehicles|length }}</span>
+        <span>{{ vehicle_count }}</span>
       </div>
       <div class="table-list">
         {% for vehicle in vehicles %}
@@ -58,12 +62,15 @@
           <p class="empty">Nenhum modelo cadastrado.</p>
         {% endfor %}
       </div>
+      {% if vehicle_count > 3 %}
+        <a class="see-more" href="{% url 'vehicle_list' %}">Ver mais modelos</a>
+      {% endif %}
     </article>
 
     <article class="panel">
       <div class="section-title">
         <h2>Pecas</h2>
-        <span>{{ parts|length }}</span>
+        <span>{{ part_count }}</span>
       </div>
       <div class="table-list">
         {% for part in parts %}
@@ -71,6 +78,7 @@
             <div>
               <strong>{{ part.brand }} {{ part.code }}</strong>
               <span>{{ part.name }} | {{ part.category_label }}</span>
+              {% if part.barcode %}<small>EAN: {{ part.barcode }}</small>{% endif %}
               <small>{{ part.compatible_vehicles.count }} modelo(s) vinculado(s)</small>
             </div>
             <div class="row-actions">
@@ -82,6 +90,9 @@
           <p class="empty">Nenhuma peca cadastrada.</p>
         {% endfor %}
       </div>
+      {% if part_count > 3 %}
+        <a class="see-more" href="{% url 'part_list' %}">Ver mais pecas</a>
+      {% endif %}
     </article>
   </section>
 {% endblock %}

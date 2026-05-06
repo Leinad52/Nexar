@@ -30,6 +30,13 @@ class StaffPasswordForm(forms.Form):
     password = forms.CharField(label='Senha especial', widget=forms.PasswordInput)
 
 
+class XmlImportForm(forms.Form):
+    xml_file = forms.FileField(
+        label='Arquivo XML da NF-e',
+        help_text='Selecione um arquivo .xml de nota fiscal eletronica.',
+    )
+
+
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
@@ -60,7 +67,20 @@ class PartForm(forms.ModelForm):
 
     class Meta:
         model = Part
-        fields = ['category', 'name', 'brand', 'code', 'notes', 'compatible_vehicles']
+        fields = [
+            'category',
+            'name',
+            'brand',
+            'code',
+            'barcode',
+            'ncm',
+            'unit',
+            'last_purchase_quantity',
+            'last_purchase_unit_price',
+            'last_purchase_total',
+            'notes',
+            'compatible_vehicles',
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

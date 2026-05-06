@@ -9,6 +9,7 @@ Nexar e um sistema Django para consultar um veiculo pela placa e exibir pecas co
 - Cadastro de modelos/aplicacoes de veiculos, sem depender de placa.
 - Cadastro de categorias de pecas pelo painel.
 - Cadastro de pecas.
+- Importacao de pecas por XML de NF-e.
 - Vinculo de compatibilidade entre pecas e veiculos.
 - Painel protegido por senha especial.
 - Integracao preparada para uma API externa de placas.
@@ -46,6 +47,62 @@ Acesse:
 http://127.0.0.1:8000/
 ```
 
+## Acessando por outros dispositivos na mesma rede
+
+Para acessar o Nexar em celulares, notebooks ou outros computadores da mesma rede, deixe o computador principal ligado e rode o servidor aceitando conexoes externas.
+
+1. Descubra o IP do computador que vai hospedar o Nexar:
+
+```powershell
+ipconfig
+```
+
+Procure por `Endereco IPv4`, por exemplo:
+
+```text
+192.168.100.42
+```
+
+2. No arquivo `nexar/settings.py`, adicione esse IP em `ALLOWED_HOSTS`:
+
+```python
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "192.168.100.42"]
+```
+
+Se outro computador for virar o host depois, troque esse IP pelo IP dele, ou mantenha os dois:
+
+```python
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "192.168.100.42", "192.168.100.55"]
+```
+
+3. Rode o Django assim:
+
+```bash
+python manage.py runserver 0.0.0.0:8000
+```
+
+4. Nos outros dispositivos da mesma rede, acesse:
+
+```text
+http://192.168.100.42:8000/
+```
+
+Use `http`, nao `https`.
+
+5. Se nao abrir, libere a porta 8000 no firewall do computador host. No PowerShell como administrador:
+
+```powershell
+New-NetFirewallRule -DisplayName "Nexar Django 8000" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow -Profile Private
+```
+
+Para testar a conexao em outro computador:
+
+```powershell
+Test-NetConnection 192.168.100.42 -Port 8000
+```
+
+Se `TcpTestSucceeded` for `True`, a rede esta chegando no servidor.
+
 ## Painel protegido
 
 O painel fica em:
@@ -77,6 +134,25 @@ NEXAR_STAFF_PASSWORD=outra-senha
 
 Quando uma placa retornar um modelo cadastrado, a pagina publica exibira as pecas corretas para aquele modelo. A placa em si nao precisa estar cadastrada.
 
+## Importando pecas por XML
+
+No painel, use o botao "Importar XML" para enviar um arquivo XML de NF-e.
+
+O Nexar importa somente os itens da nota em `det > prod`, ignorando dados de emitente, destinatario, CNPJ, impostos e cobranca.
+
+Campos aproveitados:
+
+- `xProd`: usado para separar codigo e nome da peca. Exemplo: `PD60-PASTILHA FREIO`.
+- `cEAN`: codigo de barras.
+- `NCM`: classificacao fiscal.
+- `uCom`: unidade.
+- `qCom`: ultima quantidade comprada.
+- `vUnCom`: ultimo custo unitario.
+- `vProd`: ultimo total comprado.
+- `cProd`: guardado nas observacoes como codigo do fornecedor.
+
+Se uma peca com o mesmo codigo ja existir, ela sera atualizada. Se nao existir, sera criada.
+
 ## Consulta de placa
 
 O arquivo principal da integracao e:
@@ -88,17 +164,29 @@ catalog/services.py
 Por padrao, o Nexar usa dados de teste. Para usar uma API real, configure:
 
 ```bash
+NEXAR_PLATE_API_PROVIDER=fipeapi
+NEXAR_PLATE_API_URL=https://placas.fipeapi.com.br/placas/{placa}
+NEXAR_PLATE_API_TOKEN=sua-api-key
+```
+
+Para o provedor `fipeapi`, o Nexar envia:
+
+```http
+GET /placas/ABC1D23?key=sua-api-key
+```
+
+O Nexar entende a resposta da FipeAPI em `data.veiculo` e usa a primeira opcao de `data.fipes` para codigo FIPE, marca e versao.
+
+Tambem existe suporte aos provedores `placafipe`, `placafipeonline` e `generic_get`.
+
+Se voce quiser usar uma API GET generica, defina:
+
+```bash
+NEXAR_PLATE_API_PROVIDER=generic_get
 NEXAR_PLATE_API_URL=https://sua-api.com/consulta
-NEXAR_PLATE_API_TOKEN=seu-token
 ```
 
-O Nexar envia a placa como query string:
-
-```text
-https://sua-api.com/consulta?placa=ABC1D23
-```
-
-Se a API escolhida usar outro formato, ajuste `lookup_plate_from_configured_api`.
+Nesse modo, o Nexar envia `?placa=ABC1D23`.
 
 ## Sobre BrasilAPI, Sinesp e FIPE
 
