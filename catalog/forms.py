@@ -49,9 +49,9 @@ class XmlImportForm(forms.Form):
 
 class PdfImportForm(forms.Form):
     pdf_file = MultipleFileField(
-        label='Arquivos PDF',
-        help_text='Selecione um ou mais arquivos .pdf.',
-        widget=MultipleFileInput(attrs={'multiple': True, 'accept': '.pdf,application/pdf'}),
+        label='Arquivos PDF ou XLSX',
+        help_text='Selecione um ou mais arquivos .pdf, .xlsx ou .xlsm.',
+        widget=MultipleFileInput(attrs={'multiple': True, 'accept': '.pdf,.xlsx,.xlsm,application/pdf'}),
     )
 
 

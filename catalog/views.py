@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from .application_importer import ApplicationImportResult, import_application_file
 from .forms import (
     CategoryForm,
     CompatibilityBulkForm,
@@ -211,11 +212,17 @@ def import_parts_pdf(request):
 @staff_required
 def link_parts_pdf(request):
     form = PdfImportForm(request.POST or None, request.FILES or None)
+    result = None
     processed_files = 0
 
     if request.method == 'POST' and form.is_valid():
-        processed_files = len(request.FILES.getlist('pdf_file'))
-        messages.info(request, 'Vinculo por PDF preparado. O parser sera ajustado para extrair aplicacoes peca-modelo.')
+        files = request.FILES.getlist('pdf_file')
+        processed_files = len(files)
+        result = merge_application_imports(files, apply=request.POST.get('action') == 'apply')
+        if request.POST.get('action') == 'apply':
+            messages.success(request, f'{result.linked} vinculo(s) criado(s) a partir da planilha.')
+        else:
+            messages.info(request, 'Pre-visualizacao gerada. Confira os resultados antes de aplicar.')
 
     return render(
         request,
@@ -224,9 +231,24 @@ def link_parts_pdf(request):
             'form': form,
             'processed_files': processed_files,
             'title': 'Vincular pecas por PDF',
-            'description': 'Envie tabelas de aplicacao em PDF. O Nexar vai usar esta tela para transformar catalogos em vinculos peca-modelo.',
+            'description': 'Envie tabelas de aplicacao em XLSX. PDFs sao aceitos, mas para automatizar use a versao em planilha.',
+            'result': result,
+            'supports_apply': True,
         },
     )
+
+
+def merge_application_imports(files, apply=False):
+    final_result = ApplicationImportResult()
+    for uploaded_file in files:
+        imported = import_application_file(uploaded_file, apply=apply)
+        final_result.files += imported.files
+        final_result.rows += imported.rows
+        final_result.linked += imported.linked
+        final_result.skipped += imported.skipped
+        final_result.errors.extend([f'{uploaded_file.name}: {error}' for error in imported.errors])
+        final_result.preview.extend(imported.preview)
+    return final_result
 
 
 @staff_required
