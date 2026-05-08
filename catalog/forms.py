@@ -2,28 +2,37 @@ from django import forms
 from django.utils.text import slugify
 
 from .models import Category, Part, Vehicle
-from .services import normalize_plate
 
 
-class PlateSearchForm(forms.Form):
-    plate = forms.CharField(
-        label='Placa',
-        max_length=8,
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('widget', MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single_file_clean(item, initial) for item in data]
+        return [single_file_clean(data, initial)]
+
+
+class VehicleSearchForm(forms.Form):
+    q = forms.CharField(
+        label='Modelo do carro',
+        required=False,
+        max_length=120,
         widget=forms.TextInput(
             attrs={
-                'placeholder': 'ABC1D23',
+                'placeholder': 'Ex: Voyage 2020, Onix LT, Corolla',
                 'autocomplete': 'off',
                 'autofocus': True,
-                'data-plate-input': True,
             },
         ),
     )
-
-    def clean_plate(self):
-        plate = normalize_plate(self.cleaned_data['plate'])
-        if len(plate) != 7:
-            raise forms.ValidationError('Informe uma placa valida com 7 caracteres.')
-        return plate
 
 
 class StaffPasswordForm(forms.Form):
@@ -31,9 +40,29 @@ class StaffPasswordForm(forms.Form):
 
 
 class XmlImportForm(forms.Form):
-    xml_file = forms.FileField(
-        label='Arquivo XML da NF-e',
-        help_text='Selecione um arquivo .xml de nota fiscal eletronica.',
+    xml_file = MultipleFileField(
+        label='Arquivos de pecas',
+        help_text='Selecione um ou mais arquivos .xml ou .csv.',
+        widget=MultipleFileInput(attrs={'multiple': True, 'accept': '.xml,.csv,text/xml,application/xml,text/csv'}),
+    )
+
+
+class CompatibilityBulkForm(forms.Form):
+    part = forms.ModelChoiceField(label='Peca', queryset=Part.objects.all())
+    queries = forms.CharField(
+        label='Buscas de modelos',
+        help_text='Digite uma busca por linha. Ex: Voyage 1.6, Gol 2012, Onix LT.',
+        widget=forms.Textarea(
+            attrs={
+                'rows': 8,
+                'placeholder': 'Voyage 1.6\nGol 2012\nOnix LT',
+            }
+        ),
+    )
+    replace_existing = forms.BooleanField(
+        label='Substituir vinculos existentes desta peca',
+        required=False,
+        help_text='Se marcado, remove os modelos ja vinculados antes de adicionar os novos resultados.',
     )
 
 

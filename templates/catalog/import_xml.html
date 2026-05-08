@@ -5,9 +5,9 @@
     <form class="panel form-panel" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <span class="eyebrow">Importacao</span>
-      <h1>Importar pecas por XML</h1>
+      <h1>Importar pecas</h1>
       <p class="delete-copy">
-        Envie um XML de NF-e. O Nexar vai importar somente os produtos da nota e ignorar dados de loja, cliente, CNPJ e impostos.
+        Envie XMLs de NF-e ou arquivos CSV. O Nexar importa somente informacoes das pecas e ignora dados de loja, cliente, CNPJ e impostos.
       </p>
       {{ form.as_p }}
       <div class="button-row">
@@ -20,6 +20,7 @@
       <section class="panel import-result">
         <h2>Resultado da importacao</h2>
         <dl>
+          <div><dt>Arquivos</dt><dd>{{ processed_files }}</dd></div>
           <div><dt>Criadas</dt><dd>{{ result.created }}</dd></div>
           <div><dt>Atualizadas</dt><dd>{{ result.updated }}</dd></div>
           <div><dt>Ignoradas</dt><dd>{{ result.skipped }}</dd></div>

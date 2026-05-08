@@ -135,9 +135,9 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 NEXAR_STAFF_PASSWORD = os.environ.get('NEXAR_STAFF_PASSWORD', '34260120')
-NEXAR_PLATE_API_PROVIDER = os.environ.get('NEXAR_PLATE_API_PROVIDER', 'placafipeonline')
-NEXAR_PLATE_API_URL = os.environ.get('NEXAR_PLATE_API_URL', '')
-NEXAR_PLATE_API_TOKEN = os.environ.get('NEXAR_PLATE_API_TOKEN', '')
+NEXAR_FIPE_API_BASE_URL = os.environ.get('NEXAR_FIPE_API_BASE_URL', 'https://fipe.parallelum.com.br/api/v2')
+NEXAR_FIPE_API_VERSION = os.environ.get('NEXAR_FIPE_API_VERSION', 'v2')
+NEXAR_FIPE_API_TOKEN = os.environ.get('NEXAR_FIPE_API_TOKEN', '')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

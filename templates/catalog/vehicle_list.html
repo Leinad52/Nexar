@@ -10,7 +10,7 @@
       <div class="table-row with-action">
         <div>
           <strong>{{ vehicle.brand }} {{ vehicle.model }}</strong>
-          <span>{{ vehicle.version }} | {{ vehicle.year }} | {{ vehicle.engine|default:'motor nao informado' }}</span>
+          <span>{{ vehicle.version }} | {% if vehicle.year %}{{ vehicle.year }}{% else %}ano nao especificado{% endif %} | {{ vehicle.engine|default:'motor nao informado' }}</span>
           {% if vehicle.fuel or vehicle.fipe_code %}
             <small>{{ vehicle.fuel|default:'combustivel nao informado' }} | FIPE: {{ vehicle.fipe_code|default:'nao vinculada' }}</small>
           {% endif %}

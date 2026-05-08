@@ -6,62 +6,60 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from .forms import CategoryForm, PartForm, PlateSearchForm, StaffPasswordForm, VehicleForm, XmlImportForm
+from .forms import (
+    CategoryForm,
+    CompatibilityBulkForm,
+    PartForm,
+    StaffPasswordForm,
+    VehicleForm,
+    VehicleSearchForm,
+    XmlImportForm,
+)
 from .models import Category, Part, Vehicle
-from .services import lookup_plate
-from .xml_importer import import_nfe_xml
+from .xml_importer import XmlImportResult, import_parts_file
 
 
 def home(request):
-    form = PlateSearchForm(request.GET or None)
-    vehicle = None
-    applications = []
+    form = VehicleSearchForm(request.GET or None)
+    selected_vehicle = None
+    vehicles = []
     parts = []
 
-    if form.is_valid():
-        plate = form.cleaned_data['plate']
-        try:
-            vehicle = lookup_plate(plate)
-            applications = find_vehicle_applications(vehicle)
-        except Exception as error:
-            messages.error(request, f'Nao foi possivel consultar essa placa: {error}')
+    selected_vehicle_id = request.GET.get('vehicle')
+    if selected_vehicle_id:
+        selected_vehicle = get_object_or_404(Vehicle, pk=selected_vehicle_id)
+        parts = selected_vehicle.compatible_parts.all()
 
-        if applications:
-            parts = Part.objects.filter(compatible_vehicles__in=applications).distinct()
+    if form.is_valid():
+        query = form.cleaned_data.get('q', '').strip()
+        if query:
+            vehicles = search_vehicles(query)
 
     return render(
         request,
         'catalog/home.html',
-        {'form': form, 'vehicle': vehicle, 'applications': applications, 'parts': parts},
+        {'form': form, 'vehicles': vehicles, 'selected_vehicle': selected_vehicle, 'parts': parts},
     )
 
 
-def find_vehicle_applications(vehicle):
-    matches = Vehicle.objects.filter(brand__iexact=vehicle.brand, model__iexact=vehicle.model)
-    if not matches.exists():
-        matches = Vehicle.objects.filter(brand__iexact=vehicle.brand, model__icontains=vehicle.model)
-    if not matches.exists():
-        matches = Vehicle.objects.filter(brand__iexact=vehicle.brand, model__iregex=first_model_word(vehicle.model))
-    if not matches.exists():
-        matches = Vehicle.objects.filter(brand__iexact=vehicle.brand)
-
-    if vehicle.version:
-        exact_version = matches.filter(version__iexact=vehicle.version)
-        if exact_version.exists():
-            return list(exact_version)
-
-        version_words = [word for word in vehicle.version.replace('-', ' ').split() if len(word) >= 3]
-        for word in version_words:
-            partial = matches.filter(version__icontains=word)
-            if partial.exists():
-                return list(partial)
-
-    return list(matches)
+def search_vehicles(query):
+    return search_vehicles_queryset(query)[:80]
 
 
-def first_model_word(value):
-    words = [word for word in value.replace('-', ' ').split() if len(word) >= 3]
-    return re.escape(words[0] if words else value)
+def search_vehicles_queryset(query):
+    terms = [term for term in re.split(r'\s+', query) if term]
+    vehicles = Vehicle.objects.all()
+    for term in terms:
+        vehicles = vehicles.filter(
+            Q(brand__icontains=term)
+            | Q(model__icontains=term)
+            | Q(version__icontains=term)
+            | Q(year__icontains=term)
+            | Q(engine__icontains=term)
+            | Q(fuel__icontains=term)
+            | Q(fipe_code__icontains=term)
+        )
+    return vehicles
 
 
 def staff_login(request):
@@ -174,15 +172,87 @@ def category_delete(request, pk):
 def import_parts_xml(request):
     form = XmlImportForm(request.POST or None, request.FILES or None)
     result = None
+    processed_files = 0
 
     if request.method == 'POST' and form.is_valid():
-        result = import_nfe_xml(form.cleaned_data['xml_file'])
+        files = request.FILES.getlist('xml_file')
+        result = merge_xml_imports(files)
+        processed_files = len(files)
         messages.success(
             request,
-            f'Importacao concluida: {result.created} criada(s), {result.updated} atualizada(s), {result.skipped} ignorada(s).',
+            f'Importacao concluida: {processed_files} arquivo(s), {result.created} criada(s), {result.updated} atualizada(s), {result.skipped} ignorada(s).',
         )
 
-    return render(request, 'catalog/import_xml.html', {'form': form, 'result': result})
+    return render(request, 'catalog/import_xml.html', {'form': form, 'result': result, 'processed_files': processed_files})
+
+
+@staff_required
+def bulk_compatibility(request):
+    form = CompatibilityBulkForm(request.POST or None)
+    preview = []
+    total_matches = 0
+    applied = False
+
+    if request.method == 'POST' and form.is_valid():
+        part = form.cleaned_data['part']
+        lines = parse_query_lines(form.cleaned_data['queries'])
+        preview = build_compatibility_preview(lines)
+        total_matches = sum(item['count'] for item in preview)
+
+        if request.POST.get('action') == 'apply':
+            if form.cleaned_data['replace_existing']:
+                part.compatible_vehicles.clear()
+
+            vehicle_ids = set()
+            for item in preview:
+                vehicle_ids.update(item['ids'])
+
+            part.compatible_vehicles.add(*Vehicle.objects.filter(id__in=vehicle_ids))
+            applied = True
+            messages.success(request, f'{len(vehicle_ids)} modelo(s) vinculado(s) a {part}.')
+
+    return render(
+        request,
+        'catalog/bulk_compatibility.html',
+        {
+            'form': form,
+            'preview': preview,
+            'total_matches': total_matches,
+            'applied': applied,
+        },
+    )
+
+
+def parse_query_lines(value):
+    return [line.strip() for line in value.splitlines() if line.strip()]
+
+
+def build_compatibility_preview(lines):
+    preview = []
+    for line in lines:
+        matches = search_vehicles_queryset(line).order_by('brand', 'model', 'year')
+        ids = list(matches.values_list('id', flat=True))
+        preview.append(
+            {
+                'query': line,
+                'count': len(ids),
+                'ids': ids,
+                'sample': list(matches[:8]),
+            }
+        )
+    return preview
+
+
+def merge_xml_imports(files):
+    final_result = XmlImportResult()
+    for uploaded_file in files:
+        imported = import_parts_file(uploaded_file)
+        final_result.created += imported.created
+        final_result.updated += imported.updated
+        final_result.skipped += imported.skipped
+        final_result.errors.extend([f'{uploaded_file.name}: {error}' for error in imported.errors])
+
+    return final_result
 
 
 @staff_required
@@ -214,6 +284,7 @@ def vehicle_list(request):
 @staff_required
 def part_list(request):
     query = request.GET.get('q', '').strip()
+    category = request.GET.get('category', '').strip()
     parts = Part.objects.prefetch_related('compatible_vehicles')
     if query:
         parts = parts.filter(
@@ -225,6 +296,8 @@ def part_list(request):
             | Q(ncm__icontains=query)
             | Q(notes__icontains=query)
         )
+    if category:
+        parts = parts.filter(category=category)
 
     return render(
         request,
@@ -232,6 +305,8 @@ def part_list(request):
         {
             'parts': parts,
             'query': query,
+            'category': category,
+            'categories': Category.objects.all(),
             'title': 'Pecas',
             'search_placeholder': 'Pesquisar peca, codigo, EAN, NCM ou observacao',
         },

@@ -3,38 +3,59 @@
 {% block content %}
   <section class="hero">
     <div>
-      <span class="eyebrow">Consulta por placa</span>
-      <h1>Busque um carro e veja as pecas compativeis.</h1>
-      <p>Digite a placa para identificar o modelo e carregar os itens vinculados no catalogo Nexar.</p>
+      <span class="eyebrow">Busca por modelo</span>
+      <h1>Encontre o carro e veja as pecas compativeis.</h1>
+      <p>Pesquise por marca, modelo, versao ou ano. Depois selecione o carro exato para carregar as pecas vinculadas no catalogo Nexar.</p>
     </div>
 
     <form class="plate-card" method="get">
-      {{ form.plate.label_tag }}
+      {{ form.q.label_tag }}
       <div class="search-row">
-        {{ form.plate }}
+        {{ form.q }}
         <button type="submit">Buscar</button>
       </div>
-      {% if form.plate.errors %}
-        <small class="field-error">{{ form.plate.errors.0 }}</small>
-      {% else %}
-        <small>Teste: ABC1D23, BRA2E19 ou NXR0A01</small>
-      {% endif %}
+      <small>Exemplos: Voyage 2020, Onix LT, Corolla 2018</small>
     </form>
   </section>
 
-  {% if vehicle %}
+  {% if vehicles %}
+    <section class="panel search-results">
+      <div class="section-title">
+        <h2>Modelos encontrados</h2>
+        <span>{{ vehicles|length }} resultado(s)</span>
+      </div>
+      <div class="table-list">
+        {% for vehicle in vehicles %}
+          <div class="table-row with-action">
+            <div>
+              <strong>{{ vehicle.brand }} {{ vehicle.model }}</strong>
+              <span>{{ vehicle.version }} | {% if vehicle.year %}{{ vehicle.year }}{% else %}ano nao especificado{% endif %} | {{ vehicle.engine|default:'motor nao informado' }}</span>
+              {% if vehicle.fuel or vehicle.fipe_code %}
+                <small>{{ vehicle.fuel|default:'combustivel nao informado' }} | FIPE: {{ vehicle.fipe_code|default:'nao vinculada' }}</small>
+              {% endif %}
+            </div>
+            <a class="button" href="?q={{ form.q.value|urlencode }}&vehicle={{ vehicle.pk }}">Selecionar</a>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% elif form.q.value %}
+    <section class="message">
+      <span>Nenhum modelo encontrado para "{{ form.q.value }}".</span>
+    </section>
+  {% endif %}
+
+  {% if selected_vehicle %}
     <section class="results">
       <article class="panel vehicle">
-        <span class="eyebrow">Veiculo encontrado</span>
-        <h2>{{ vehicle.brand }} {{ vehicle.model }}</h2>
+        <span class="eyebrow">Modelo selecionado</span>
+        <h2>{{ selected_vehicle.brand }} {{ selected_vehicle.model }}</h2>
         <dl>
-          <div><dt>Placa</dt><dd>{{ vehicle.plate }}</dd></div>
-          <div><dt>Versao</dt><dd>{{ vehicle.version }}</dd></div>
-          <div><dt>Ano</dt><dd>{{ vehicle.year }}</dd></div>
-          <div><dt>Motor</dt><dd>{{ vehicle.engine|default:'Nao informado' }}</dd></div>
-          <div><dt>Combustivel</dt><dd>{{ vehicle.fuel|default:'Nao informado' }}</dd></div>
-          <div><dt>Cor</dt><dd>{{ vehicle.color|default:'Nao informada' }}</dd></div>
-          <div><dt>FIPE</dt><dd>{{ vehicle.fipe_code|default:'Nao vinculado' }}</dd></div>
+          <div><dt>Versao</dt><dd>{{ selected_vehicle.version }}</dd></div>
+          <div><dt>Ano</dt><dd>{% if selected_vehicle.year %}{{ selected_vehicle.year }}{% else %}Nao especificado{% endif %}</dd></div>
+          <div><dt>Motor</dt><dd>{{ selected_vehicle.engine|default:'Nao informado' }}</dd></div>
+          <div><dt>Combustivel</dt><dd>{{ selected_vehicle.fuel|default:'Nao informado' }}</dd></div>
+          <div><dt>FIPE</dt><dd>{{ selected_vehicle.fipe_code|default:'Nao vinculada' }}</dd></div>
         </dl>
       </article>
 
@@ -43,11 +64,6 @@
           <h2>Pecas compativeis</h2>
           <span>{{ parts|length }} item(ns)</span>
         </div>
-        {% if applications %}
-          <p class="match-note">
-            Compatibilidade encontrada em {{ applications|length }} modelo(s) cadastrado(s).
-          </p>
-        {% endif %}
         {% if parts %}
           <input
             class="parts-search"
@@ -73,19 +89,13 @@
             {% endfor %}
           </div>
         {% else %}
-          <p class="empty">Esse modelo ainda nao tem pecas vinculadas. Cadastre o modelo e marque as pecas no painel.</p>
+          <p class="empty">Esse modelo ainda nao tem pecas vinculadas. Vincule pecas a ele no painel.</p>
         {% endif %}
       </section>
     </section>
   {% endif %}
-  <script>
-    const plateInput = document.querySelector('[data-plate-input]');
-    if (plateInput) {
-      plateInput.addEventListener('input', () => {
-        plateInput.value = plateInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-      });
-    }
 
+  <script>
     const partsSearch = document.querySelector('[data-parts-search]');
     const partsCount = document.querySelector('[data-parts-count]');
     const partRows = Array.from(document.querySelectorAll('[data-part-row]'));

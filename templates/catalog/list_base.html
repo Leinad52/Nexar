@@ -21,8 +21,9 @@
         placeholder="{{ search_placeholder }}"
         autocomplete="off"
       >
+      {% block search_filters %}{% endblock %}
       <button type="submit">Buscar</button>
-      {% if query %}
+      {% if query or category %}
         <a class="button ghost" href="{{ request.path }}">Limpar</a>
       {% endif %}
     </form>

@@ -256,7 +256,7 @@ dd {
 
 .list-search {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
   gap: 10px;
   margin-bottom: 18px;
 }
@@ -347,6 +347,16 @@ dd {
   margin-top: 18px;
 }
 
+.bulk-form {
+  width: 100%;
+}
+
+.preview-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+}
+
 .form-panel label {
   display: block;
   margin-bottom: 6px;
@@ -377,6 +387,15 @@ dd {
   list-style: none;
 }
 
+.model-options {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid #d6e1db;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fbfdfc;
+}
+
 .form-panel li label,
 .form-panel #id_compatible_vehicles > div label {
   display: flex;
@@ -389,6 +408,12 @@ dd {
 .form-panel #id_compatible_vehicles > div.search-match {
   border-radius: 8px;
   background: #e9f7ee;
+}
+
+.form-panel li.selected-match,
+.form-panel #id_compatible_vehicles > div.selected-match {
+  border-radius: 8px;
+  background: #eef4f0;
 }
 
 .form-panel input[type="checkbox"] {

@@ -19,7 +19,13 @@
             >
             <small class="search-hint" data-model-count></small>
           {% endif %}
-          {{ field }}
+          {% if field.name == 'compatible_vehicles' %}
+            <div class="model-options is-searchable">
+              {{ field }}
+            </div>
+          {% else %}
+            {{ field }}
+          {% endif %}
           {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
           {% for error in field.errors %}
             <small class="field-error">{{ error }}</small>
@@ -51,16 +57,22 @@
         let firstVisible = null;
 
         items.forEach((item) => {
+          const checkbox = item.querySelector('input[type="checkbox"]');
+          const checked = checkbox && checkbox.checked;
           const label = normalize(item.textContent);
-          const matches = !query || label.includes(query);
-          item.style.display = matches ? '' : 'none';
-          item.classList.toggle('search-match', matches && Boolean(query));
+          const matches = Boolean(query) && label.includes(query);
+          const shouldShow = matches || checked;
+          item.style.display = shouldShow ? '' : 'none';
+          item.classList.toggle('search-match', matches);
+          item.classList.toggle('selected-match', checked);
           if (matches) visible += 1;
           if (matches && !firstVisible) firstVisible = item;
         });
 
         if (modelCount) {
-          modelCount.textContent = `${visible} modelo(s) encontrado(s)`;
+          modelCount.textContent = query
+            ? `${visible} modelo(s) encontrado(s)`
+            : 'Digite para pesquisar. Modelos ja vinculados continuam visiveis.';
         }
 
         if (firstVisible) {
@@ -73,6 +85,12 @@
         if (event.key === 'Enter') {
           event.preventDefault();
           updateModelList();
+        }
+      });
+      items.forEach((item) => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          checkbox.addEventListener('change', updateModelList);
         }
       });
       updateModelList();

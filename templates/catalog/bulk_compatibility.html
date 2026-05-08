@@ -1,0 +1,50 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+  <section class="dashboard-head">
+    <div>
+      <span class="eyebrow">Automacao</span>
+      <h1>Vincular peca a modelos em massa</h1>
+    </div>
+    <div class="button-row">
+      <a class="button ghost" href="{% url 'staff_dashboard' %}">Voltar</a>
+    </div>
+  </section>
+
+  <section class="panel">
+    <form class="form-panel bulk-form" method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <div class="button-row">
+        <button class="button ghost" type="submit" name="action" value="preview">Pre-visualizar</button>
+        <button type="submit" name="action" value="apply">Aplicar vinculos</button>
+      </div>
+    </form>
+  </section>
+
+  {% if preview %}
+    <section class="panel import-result">
+      <div class="section-title">
+        <h2>Pre-visualizacao</h2>
+        <span>{{ total_matches }} modelo(s)</span>
+      </div>
+      <div class="table-list">
+        {% for item in preview %}
+          <article class="table-row">
+            <strong>{{ item.query }}</strong>
+            <span>{{ item.count }} modelo(s) encontrado(s)</span>
+            {% if item.sample %}
+              <div class="preview-list">
+                {% for vehicle in item.sample %}
+                  <small>{{ vehicle.brand }} {{ vehicle.model }} | {% if vehicle.year %}{{ vehicle.year }}{% else %}ano nao especificado{% endif %}</small>
+                {% endfor %}
+              </div>
+            {% else %}
+              <small>Nenhum modelo encontrado para esta busca.</small>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}

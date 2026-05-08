@@ -9,6 +9,10 @@ class Vehicle(models.Model):
     engine = models.CharField('motor', max_length=40, blank=True)
     fuel = models.CharField('combustivel', max_length=40, blank=True)
     fipe_code = models.CharField('codigo FIPE', max_length=20, blank=True)
+    fipe_vehicle_type = models.CharField('tipo FIPE', max_length=20, blank=True)
+    fipe_brand_code = models.CharField('codigo marca FIPE', max_length=20, blank=True)
+    fipe_model_code = models.CharField('codigo modelo FIPE', max_length=20, blank=True)
+    fipe_year_code = models.CharField('codigo ano FIPE', max_length=20, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

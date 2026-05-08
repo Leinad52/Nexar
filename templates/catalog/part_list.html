@@ -1,8 +1,17 @@
 {% extends 'catalog/list_base.html' %}
 
 {% block actions %}
-  <a class="button" href="{% url 'import_parts_xml' %}">Importar XML</a>
+  <a class="button" href="{% url 'import_parts_xml' %}">Importar pecas</a>
   <a class="button primary" href="{% url 'part_create' %}">Nova peca</a>
+{% endblock %}
+
+{% block search_filters %}
+  <select name="category">
+    <option value="">Todas as categorias</option>
+    {% for item in categories %}
+      <option value="{{ item.slug }}" {% if category == item.slug %}selected{% endif %}>{{ item.name }}</option>
+    {% endfor %}
+  </select>
 {% endblock %}
 
 {% block list_content %}

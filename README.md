@@ -1,19 +1,18 @@
 # Nexar
 
-Nexar e um sistema Django para consultar um veiculo pela placa e exibir pecas compativeis cadastradas no catalogo.
+Nexar e um sistema Django para pesquisar modelos de veiculos e exibir pecas compativeis cadastradas no catalogo.
 
 ## O que esta pronto
 
 - Projeto Django com SQLite.
-- Pagina publica de busca por placa.
+- Pagina publica de busca por modelo, marca, versao ou ano.
 - Cadastro de modelos/aplicacoes de veiculos, sem depender de placa.
 - Cadastro de categorias de pecas pelo painel.
 - Cadastro de pecas.
-- Importacao de pecas por XML de NF-e.
+- Importacao de pecas por XML de NF-e ou CSV.
 - Vinculo de compatibilidade entre pecas e veiculos.
 - Painel protegido por senha especial.
-- Integracao preparada para uma API externa de placas.
-- Fallback com dados mockados enquanto a API real nao estiver configurada.
+- Importacao automatizada de modelos pela FIPE DeividFortuna/Parallelum.
 
 ## Rodando o projeto
 
@@ -33,6 +32,81 @@ Opcionalmente, carregue dados demo do Voyage:
 
 ```bash
 python manage.py seed_demo
+```
+
+Para testar a importacao FIPE com uma amostra pequena:
+
+```bash
+python manage.py import_fipe --brand-limit 1 --model-limit 1
+```
+
+Para popular rapidamente marcas e modelos sem consultar anos, use:
+
+```bash
+python manage.py import_fipe --catalog-only
+```
+
+Esse modo evita a maioria dos erros `429`, porque usa poucas requisicoes. Os modelos entram com ano nao especificado, e depois podem ser enriquecidos aos poucos.
+
+Depois de importar o catalogo rapido, voce pode criar os anos somente para modelos ja existentes:
+
+```bash
+python manage.py import_fipe --expand-existing-years --brand-code 59 --sleep 0.5
+```
+
+Esse comando cria registros especificos por ano, por exemplo uma entrada generica `VW Voyage` pode virar entradas como `VW Voyage 2018`, `VW Voyage 2019` e `VW Voyage 2020`. Se a entrada generica ja tiver pecas vinculadas, os vinculos sao copiados para os anos criados.
+
+Importante: modelos importados antes desta versao talvez ainda nao tenham os codigos internos da FIPE salvos. Nesse caso, rode novamente o catalogo rapido da marca antes de expandir anos:
+
+```bash
+python manage.py import_fipe --brand-code 59 --catalog-only --sleep 0.2
+python manage.py import_fipe --expand-existing-years --brand-code 59 --sleep 0.5
+```
+
+Se voce ja importou muitos modelos antes dos codigos internos existirem, preencha esses codigos primeiro:
+
+```bash
+python manage.py import_fipe --brand-code 59 --backfill-codes --sleep 0.2
+python manage.py import_fipe --brand-code 59 --expand-existing-years --sleep 0.5
+```
+
+Para importar carros sem limitar marca/modelo:
+
+```bash
+python manage.py import_fipe
+```
+
+Use com cuidado: a API gratuita tem limite diario e a importacao completa pode fazer muitas requisicoes.
+O ideal e importar por marcas prioritarias, em vez de puxar o Brasil inteiro de uma vez:
+
+```bash
+python manage.py import_fipe --brand-code 59 --catalog-only --sleep 0.2
+```
+
+Tambem da para importar varias marcas:
+
+```bash
+python manage.py import_fipe --brand-code 59,21,23 --catalog-only --sleep 0.2
+```
+
+Na API v1, alguns codigos comuns sao:
+
+- `59`: VW - VolksWagen
+- `21`: Fiat
+- `23`: GM - Chevrolet
+- `25`: Honda
+- `56`: Toyota
+
+Se aparecer erro `429 Too Many Requests`, voce atingiu o limite temporario da FIPE. Espere alguns minutos ou rode com uma pausa maior:
+
+```bash
+python manage.py import_fipe --sleep 1 --retry-wait 180
+```
+
+O comando imprime `Modelo CODIGO - nome` durante a execucao. Se parar no meio, voce pode retomar a partir de uma marca/modelo:
+
+```bash
+python manage.py import_fipe --start-brand-code 7 --start-model-code 9785 --sleep 1 --retry-wait 180
 ```
 
 Inicie o servidor:
@@ -132,11 +206,11 @@ NEXAR_STAFF_PASSWORD=outra-senha
 5. Cadastre uma peca em "Nova peca".
 6. No cadastro da peca, marque os modelos compativeis.
 
-Quando uma placa retornar um modelo cadastrado, a pagina publica exibira as pecas corretas para aquele modelo. A placa em si nao precisa estar cadastrada.
+Na pagina publica, pesquise pelo modelo do carro, por exemplo `Voyage 2020`, escolha o resultado exato e o Nexar exibira as pecas vinculadas ao modelo selecionado.
 
-## Importando pecas por XML
+## Importando pecas por XML ou CSV
 
-No painel, use o botao "Importar XML" para enviar um arquivo XML de NF-e.
+No painel, use o botao "Importar pecas" para enviar um ou mais arquivos XML de NF-e ou CSV de uma vez.
 
 O Nexar importa somente os itens da nota em `det > prod`, ignorando dados de emitente, destinatario, CNPJ, impostos e cobranca.
 
@@ -153,53 +227,61 @@ Campos aproveitados:
 
 Se uma peca com o mesmo codigo ja existir, ela sera atualizada. Se nao existir, sera criada.
 
-## Consulta de placa
+Para CSV, o Nexar tenta reconhecer colunas comuns, como:
 
-O arquivo principal da integracao e:
+- `codigo`, `cod`, `referencia`, `sku`
+- `nome`, `descricao`, `produto`
+- `marca`, `fabricante`
+- `categoria`, `grupo`, `linha`
+- `ean`, `codigo de barras`, `gtin`
+- `ncm`
+- `unidade`
+- `preco`, `valor`, `custo`
+- `quantidade`
+- `total`
+
+## Importando modelos pela FIPE
+
+O comando principal e:
+
+```bash
+python manage.py import_fipe
+```
+
+Por padrao, ele usa a API FIPE v2:
 
 ```text
-catalog/services.py
+https://fipe.parallelum.com.br/api/v2
 ```
 
-Por padrao, o Nexar usa dados de teste. Para usar uma API real, configure:
+Tambem e possivel configurar no `.env`:
 
 ```bash
-NEXAR_PLATE_API_PROVIDER=fipeapi
-NEXAR_PLATE_API_URL=https://placas.fipeapi.com.br/placas/{placa}
-NEXAR_PLATE_API_TOKEN=sua-api-key
+NEXAR_FIPE_API_BASE_URL=https://parallelum.com.br/fipe/api/v1
+NEXAR_FIPE_API_VERSION=v1
+NEXAR_FIPE_API_TOKEN=
 ```
 
-Para o provedor `fipeapi`, o Nexar envia:
-
-```http
-GET /placas/ABC1D23?key=sua-api-key
-```
-
-O Nexar entende a resposta da FipeAPI em `data.veiculo` e usa a primeira opcao de `data.fipes` para codigo FIPE, marca e versao.
-
-Tambem existe suporte aos provedores `placafipe`, `placafipeonline` e `generic_get`.
-
-Se voce quiser usar uma API GET generica, defina:
+Configuracao recomendada:
 
 ```bash
-NEXAR_PLATE_API_PROVIDER=generic_get
-NEXAR_PLATE_API_URL=https://sua-api.com/consulta
+NEXAR_FIPE_API_BASE_URL=https://fipe.parallelum.com.br/api/v2
+NEXAR_FIPE_API_VERSION=v2
+NEXAR_FIPE_API_TOKEN=
 ```
 
-Nesse modo, o Nexar envia `?placa=ABC1D23`.
+Criando um token gratuito em https://fipe.online, a FIPE informa que o limite sobe de 500 para 1000 requisicoes por 24h. Coloque esse token em `NEXAR_FIPE_API_TOKEN`.
 
-## Sobre BrasilAPI, Sinesp e FIPE
+Opcoes uteis:
 
-- BrasilAPI nao possui hoje um endpoint publico estavel de consulta de placa. Existe uma issue antiga pedindo isso: https://github.com/BrasilAPI/BrasilAPI/issues/137
-- Sinesp Cidadao existe como solucao/app do governo, mas nao encontrei documentacao publica oficial de API REST para uso direto por sistemas terceiros: https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/diretoria-de-gestao-e-integracao-de-informacoes-1/produtos/sinesp_cidadao
-- A API FIPE do DeividFortuna serve para marcas, modelos, anos e valores FIPE, nao para consultar veiculo por placa: https://deividfortuna.github.io/fipe/
+```bash
+python manage.py import_fipe --vehicle-type carros
+python manage.py import_fipe --vehicle-type motos
+python manage.py import_fipe --vehicle-type caminhoes
+python manage.py import_fipe --brand-limit 5 --model-limit 20
+python manage.py import_fipe --with-values
+```
 
-Na pratica: para placa real em producao, provavelmente voce vai precisar contratar/configurar um provedor de consulta de placas, ou obter acesso autorizado a uma fonte oficial. O Nexar ja esta preparado para receber essa URL e token.
+`--with-values` faz uma consulta extra por ano/modelo para preencher detalhes como `CodigoFipe` e combustivel oficial, entao consome muito mais requisicoes.
 
-## Placas de teste
-
-Enquanto nao houver API real:
-
-- `ABC1D23`: Volkswagen Voyage 1.6 MSI Comfortline
-- `BRA2E19`: Chevrolet Onix 1.0 LT
-- `NXR0A01`: Fiat Argo 1.3 Drive
+Fonte da API FIPE: https://deividfortuna.github.io/fipe/

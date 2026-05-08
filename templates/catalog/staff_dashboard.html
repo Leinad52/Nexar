@@ -9,7 +9,8 @@
     <div class="button-row">
       <a class="button" href="{% url 'category_create' %}">Nova categoria</a>
       <a class="button" href="{% url 'vehicle_create' %}">Novo modelo</a>
-      <a class="button" href="{% url 'import_parts_xml' %}">Importar XML</a>
+      <a class="button" href="{% url 'bulk_compatibility' %}">Vincular em massa</a>
+      <a class="button" href="{% url 'import_parts_xml' %}">Importar pecas</a>
       <a class="button primary" href="{% url 'part_create' %}">Nova peca</a>
     </div>
   </section>
@@ -51,7 +52,7 @@
           <div class="table-row with-action">
             <div>
               <strong>{{ vehicle.brand }} {{ vehicle.model }}</strong>
-              <span>{{ vehicle.version }} | {{ vehicle.year }} | {{ vehicle.engine|default:'motor nao informado' }}</span>
+              <span>{{ vehicle.version }} | {% if vehicle.year %}{{ vehicle.year }}{% else %}ano nao especificado{% endif %} | {{ vehicle.engine|default:'motor nao informado' }}</span>
             </div>
             <div class="row-actions">
               <a href="{% url 'vehicle_edit' vehicle.pk %}">Editar</a>
