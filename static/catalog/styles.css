@@ -305,6 +305,33 @@ dd {
   margin: 20px 0 18px;
 }
 
+.action-menu {
+  min-width: min(100%, 260px);
+}
+
+.action-menu summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 0 15px;
+  background: #15221c;
+  color: #f7fbf8;
+  font-weight: 850;
+  cursor: pointer;
+  list-style: none;
+}
+
+.action-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.action-menu-content {
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
 .dashboard-head h1,
 .form-panel h1 {
   font-size: clamp(2rem, 5vw, 3.2rem);

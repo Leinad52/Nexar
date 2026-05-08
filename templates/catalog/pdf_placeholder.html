@@ -1,0 +1,24 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+  <section class="center-panel wide">
+    <form class="panel form-panel" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <span class="eyebrow">PDF</span>
+      <h1>{{ title }}</h1>
+      <p class="delete-copy">{{ description }}</p>
+      {{ form.as_p }}
+      <div class="button-row">
+        <a class="button ghost" href="{% url 'staff_dashboard' %}">Cancelar</a>
+        <button type="submit">Enviar PDF</button>
+      </div>
+    </form>
+
+    {% if processed_files %}
+      <section class="panel import-result">
+        <h2>Arquivos recebidos</h2>
+        <p class="delete-copy">{{ processed_files }} arquivo(s) PDF recebido(s). A leitura automatica sera conectada ao formato do catalogo.</p>
+      </section>
+    {% endif %}
+  </section>
+{% endblock %}

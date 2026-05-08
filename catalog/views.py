@@ -10,6 +10,7 @@ from .forms import (
     CategoryForm,
     CompatibilityBulkForm,
     PartForm,
+    PdfImportForm,
     StaffPasswordForm,
     VehicleForm,
     VehicleSearchForm,
@@ -184,6 +185,48 @@ def import_parts_xml(request):
         )
 
     return render(request, 'catalog/import_xml.html', {'form': form, 'result': result, 'processed_files': processed_files})
+
+
+@staff_required
+def import_parts_pdf(request):
+    form = PdfImportForm(request.POST or None, request.FILES or None)
+    processed_files = 0
+
+    if request.method == 'POST' and form.is_valid():
+        processed_files = len(request.FILES.getlist('pdf_file'))
+        messages.info(request, 'Importacao por PDF preparada. O parser sera ajustado conforme o modelo do catalogo.')
+
+    return render(
+        request,
+        'catalog/pdf_placeholder.html',
+        {
+            'form': form,
+            'processed_files': processed_files,
+            'title': 'Importar pecas por PDF',
+            'description': 'Envie catalogos ou tabelas em PDF com dados de pecas. O proximo passo e adaptar a leitura ao layout do arquivo.',
+        },
+    )
+
+
+@staff_required
+def link_parts_pdf(request):
+    form = PdfImportForm(request.POST or None, request.FILES or None)
+    processed_files = 0
+
+    if request.method == 'POST' and form.is_valid():
+        processed_files = len(request.FILES.getlist('pdf_file'))
+        messages.info(request, 'Vinculo por PDF preparado. O parser sera ajustado para extrair aplicacoes peca-modelo.')
+
+    return render(
+        request,
+        'catalog/pdf_placeholder.html',
+        {
+            'form': form,
+            'processed_files': processed_files,
+            'title': 'Vincular pecas por PDF',
+            'description': 'Envie tabelas de aplicacao em PDF. O Nexar vai usar esta tela para transformar catalogos em vinculos peca-modelo.',
+        },
+    )
 
 
 @staff_required
