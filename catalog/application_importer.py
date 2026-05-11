@@ -22,7 +22,7 @@ class ApplicationImportResult:
         self.preview = self.preview or []
 
 
-PART_HEADERS = {'codigo', 'cod', 'referencia', 'ref', 'sku', 'produto', 'peca', 'codigo peca', 'ref peca'}
+PART_HEADERS = {'codigo', 'cod', 'referencia', 'ref', 'sku', 'produto', 'peca', 'codigo peca', 'codigo produto', 'ref peca'}
 BRAND_HEADERS = {'marca veiculo', 'montadora', 'fabricante veiculo', 'fabricante', 'marca'}
 MODEL_HEADERS = {'modelo', 'veiculo', 'carro', 'aplicacao'}
 VERSION_HEADERS = {'versao', 'descricao veiculo', 'descricao modelo'}
@@ -32,13 +32,39 @@ YEAR_END_HEADERS = {'ano final', 'fim', 'ate', 'ano ate', 'ano fim'}
 ENGINE_HEADERS = {'motor', 'motorizacao', 'cilindrada'}
 IGNORED_HEADERS = {'linha', 'tipo', 'combustivel', 'obs', 'observacao', 'observacoes'}
 APPLY_MARKS = {'x', 'sim', 's', 'ok', 'aplica', 'aplicavel', '1'}
+PDF_COLUMN_SPLIT_RE = re.compile(r'\s*\|\s*|\t+|\s{2,}|;')
+PDF_KEY_VALUE_RE = re.compile(r'([^:]+):\s*([^:]+?)(?=\s+[A-Za-zÀ-ÿ][^:]{1,30}:|$)')
+PDF_FIELD_ALIASES = {
+    'part': PART_HEADERS | {'codigo produto', 'produto'},
+    'brand': BRAND_HEADERS,
+    'model': MODEL_HEADERS,
+    'version': VERSION_HEADERS,
+    'year': YEAR_HEADERS,
+    'year_start': YEAR_START_HEADERS,
+    'year_end': YEAR_END_HEADERS,
+    'engine': ENGINE_HEADERS,
+}
+PDF_CANONICAL_HEADERS = {
+    'part': 'codigo',
+    'brand': 'marca',
+    'model': 'modelo',
+    'version': 'versao',
+    'year': 'ano',
+    'year_start': 'ano inicial',
+    'year_end': 'ano final',
+    'engine': 'motor',
+}
 
 
 def import_application_file(uploaded_file, apply=False, max_preview=40):
     filename = (getattr(uploaded_file, 'name', '') or '').lower()
     result = ApplicationImportResult(files=1)
+    if filename.endswith('.pdf'):
+        import_application_pdf(uploaded_file, result, apply, max_preview)
+        return result
+
     if not filename.endswith(('.xlsx', '.xlsm')):
-        result.errors.append('PDF recebido. Para automatizar, envie a versao XLSX da tabela.')
+        result.errors.append('Formato nao suportado. Envie PDF, XLSX ou XLSM.')
         result.skipped += 1
         return result
 
@@ -63,6 +89,108 @@ def import_application_file(uploaded_file, apply=False, max_preview=40):
             process_row(row_data, mapping, result, apply, max_preview)
 
     return result
+
+
+def import_application_pdf(uploaded_file, result, apply=False, max_preview=40):
+    try:
+        text = extract_pdf_text(uploaded_file)
+    except ImportError:
+        result.errors.append('Leitura de PDF indisponivel. Instale as dependencias com: python -m pip install -r requirements.txt')
+        result.skipped += 1
+        return
+    except Exception as error:
+        result.errors.append(f'Nao foi possivel ler o PDF: {error}')
+        result.skipped += 1
+        return
+
+    rows = rows_from_pdf_text(text)
+    if not rows:
+        result.errors.append('Nenhuma tabela de aplicacao reconhecida no PDF. Se ele for imagem escaneada, sera necessario OCR ou a planilha original.')
+        result.skipped += 1
+        return
+
+    for row_data, mapping in rows:
+        process_row(row_data, mapping, result, apply, max_preview)
+
+
+def extract_pdf_text(uploaded_file):
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        from PyPDF2 import PdfReader
+
+    if hasattr(uploaded_file, 'seek'):
+        uploaded_file.seek(0)
+
+    reader = PdfReader(uploaded_file)
+    return '\n'.join(page.extract_text() or '' for page in reader.pages)
+
+
+def rows_from_pdf_text(text):
+    lines = [normalize_pdf_line(line) for line in text.splitlines()]
+    lines = [line for line in lines if line]
+    return rows_from_pdf_table(lines) or rows_from_pdf_key_values(lines)
+
+
+def rows_from_pdf_table(lines):
+    split_rows = [split_pdf_columns(line) for line in lines]
+    header_index = find_header_index(split_rows)
+    if header_index is None:
+        return []
+
+    headers = [normalize_header(value) for value in split_rows[header_index]]
+    mapping = map_headers(headers)
+    rows = []
+    for columns in split_rows[header_index + 1:]:
+        if len([column for column in columns if column]) < 2:
+            continue
+
+        row_data = {
+            headers[index]: normalize_cell(value)
+            for index, value in enumerate(columns)
+            if index < len(headers) and headers[index]
+        }
+        if row_data:
+            rows.append((row_data, mapping))
+    return rows
+
+
+def rows_from_pdf_key_values(lines):
+    rows = []
+    for line in lines:
+        row = parse_pdf_key_value_line(line)
+        if not row:
+            continue
+
+        headers = list(row)
+        rows.append((row, map_headers(headers)))
+    return rows
+
+
+def parse_pdf_key_value_line(line):
+    row = {}
+    for raw_key, raw_value in PDF_KEY_VALUE_RE.findall(line):
+        key = normalize_pdf_field(raw_key)
+        if key and raw_value.strip():
+            row[key] = raw_value.strip()
+    return row if row and get_part_codes_from_row(row, map_headers(list(row))) else {}
+
+
+def normalize_pdf_field(value):
+    header = normalize_header(value)
+    for canonical, aliases in PDF_FIELD_ALIASES.items():
+        if header in {normalize_header(alias) for alias in aliases}:
+            return PDF_CANONICAL_HEADERS[canonical]
+    return header
+
+
+def split_pdf_columns(line):
+    columns = [column.strip() for column in PDF_COLUMN_SPLIT_RE.split(line)]
+    return [column for column in columns if column]
+
+
+def normalize_pdf_line(line):
+    return ' '.join((line or '').replace('\xa0', ' ').split())
 
 
 def find_header_index(rows):

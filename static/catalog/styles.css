@@ -83,12 +83,40 @@ button {
   color: #f7fbf8;
   font-weight: 800;
   cursor: pointer;
+  box-shadow: 0 8px 18px rgba(19, 31, 25, 0.1);
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .button.primary,
 button {
   background: #8fd6a8;
   color: #102019;
+}
+
+.nav-actions a:hover,
+.button:hover,
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(19, 31, 25, 0.16);
+}
+
+.nav-actions a:active,
+.button:active,
+button:active {
+  transform: translateY(0);
+}
+
+.nav-actions a:focus-visible,
+.button:focus-visible,
+button:focus-visible,
+.action-menu summary:focus-visible,
+.row-actions a:focus-visible {
+  outline: 3px solid rgba(143, 214, 168, 0.54);
+  outline-offset: 3px;
 }
 
 .danger-button {
@@ -104,6 +132,48 @@ button {
 .danger-link {
   color: #9b2424;
   font-weight: 800;
+}
+
+.row-actions {
+  justify-content: flex-end;
+}
+
+.row-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border: 1px solid #d7e2dc;
+  border-radius: 8px;
+  padding: 0 11px;
+  background: #fff;
+  color: #21362c;
+  font-size: 0.9rem;
+  font-weight: 850;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.row-actions a:hover {
+  border-color: #bfd4c8;
+  background: #eef7f2;
+  box-shadow: 0 8px 18px rgba(19, 31, 25, 0.08);
+  transform: translateY(-1px);
+}
+
+.row-actions .danger-link {
+  border-color: #f0c8c8;
+  background: #fff7f7;
+  color: #9b2424;
+}
+
+.row-actions .danger-link:hover {
+  border-color: #dc9b9b;
+  background: #ffecec;
 }
 
 .see-more {
@@ -306,7 +376,10 @@ dd {
 }
 
 .action-menu {
-  min-width: min(100%, 260px);
+  min-width: min(100%, 280px);
+  position: relative;
+  z-index: 10;
+  text-align: right;
 }
 
 .action-menu summary {
@@ -321,6 +394,38 @@ dd {
   font-weight: 850;
   cursor: pointer;
   list-style: none;
+  gap: 10px;
+  box-shadow: 0 10px 24px rgba(19, 31, 25, 0.14);
+  transform-origin: center;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.action-menu summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 180ms ease;
+}
+
+.action-menu summary:hover {
+  background: #1d3127;
+  box-shadow: 0 14px 30px rgba(19, 31, 25, 0.2);
+  transform: translateY(-1px);
+}
+
+.action-menu[open] summary {
+  background: #102019;
+  animation: menu-button-pop 220ms ease-out;
+}
+
+.action-menu[open] summary::after {
+  transform: rotate(225deg) translate(-1px, -1px);
 }
 
 .action-menu summary::-webkit-details-marker {
@@ -328,8 +433,59 @@ dd {
 }
 
 .action-menu-content {
-  justify-content: flex-end;
-  margin-top: 12px;
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  display: grid;
+  width: min(560px, calc(100vw - 28px));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  border: 1px solid rgba(37, 55, 47, 0.14);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 24px 60px rgba(19, 31, 25, 0.18);
+  backdrop-filter: blur(16px);
+  text-align: left;
+  transform-origin: top right;
+  animation: action-menu-in 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.action-menu-content .button {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 48px;
+  padding: 0 18px;
+}
+
+.action-menu-content .button.primary {
+  grid-column: 1 / -1;
+}
+
+@keyframes action-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes menu-button-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(0.96);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .dashboard-head h1,
@@ -474,5 +630,26 @@ dd {
   .code-box {
     min-width: 0;
     text-align: left;
+  }
+
+  .action-menu {
+    width: 100%;
+    text-align: left;
+  }
+
+  .action-menu summary {
+    width: 100%;
+  }
+
+  .action-menu-content {
+    left: 0;
+    right: auto;
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .row-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 }

@@ -231,7 +231,7 @@ def link_parts_pdf(request):
             'form': form,
             'processed_files': processed_files,
             'title': 'Vincular pecas por PDF',
-            'description': 'Envie tabelas de aplicacao em XLSX. PDFs sao aceitos, mas para automatizar use a versao em planilha.',
+            'description': 'Envie tabelas de aplicacao em PDF, XLSX ou XLSM. PDFs escaneados precisam de OCR ou da planilha original.',
             'result': result,
             'supports_apply': True,
         },

@@ -240,9 +240,9 @@ Para CSV, o Nexar tenta reconhecer colunas comuns, como:
 - `quantidade`
 - `total`
 
-## Vinculando pecas por XLSX
+## Vinculando pecas por PDF ou XLSX
 
-No painel, use "Vincular pecas por PDF" para enviar tabelas de aplicacao. PDFs ainda sao recebidos como base futura, mas a vinculacao automatica funciona melhor com arquivos `.xlsx` ou `.xlsm`.
+No painel, use "Vincular pecas por PDF" para enviar tabelas de aplicacao em `.pdf`, `.xlsx` ou `.xlsm`.
 
 O fluxo recomendado e:
 
@@ -250,7 +250,9 @@ O fluxo recomendado e:
 2. Confira quais pecas e modelos foram encontrados.
 3. Se estiver certo, envie a mesma planilha e clique em "Aplicar vinculos".
 
-O importador tenta reconhecer colunas comuns de veiculo, como `marca`, `modelo`, `versao`, `motor`, `ano`, `ano inicial` e `ano final`. Ele tambem aceita tabelas largas, onde cada linha representa um carro e as colunas seguintes trazem codigos de pecas.
+O importador tenta reconhecer colunas comuns de peca e veiculo, como `codigo`, `peca`, `marca`, `modelo`, `versao`, `motor`, `ano`, `ano inicial` e `ano final`. Ele tambem aceita tabelas largas, onde cada linha representa um carro e as colunas seguintes trazem codigos de pecas.
+
+Para PDF, o arquivo precisa ter texto extraivel. Se o PDF for uma imagem escaneada, gere uma versao com OCR ou envie a planilha original.
 
 ## Importando modelos pela FIPE
 

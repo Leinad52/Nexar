@@ -8,14 +8,14 @@
     </div>
     <details class="action-menu">
       <summary>Menu de acoes</summary>
-      <div class="button-row action-menu-content">
-        <a class="button" href="{% url 'category_create' %}">Nova categoria</a>
+      <div class="action-menu-content">
+        <a class="button primary" href="{% url 'part_create' %}">Nova peca</a>
         <a class="button" href="{% url 'vehicle_create' %}">Novo modelo</a>
+        <a class="button" href="{% url 'category_create' %}">Nova categoria</a>
         <a class="button" href="{% url 'bulk_compatibility' %}">Vincular em massa</a>
         <a class="button" href="{% url 'link_parts_pdf' %}">Vincular pecas por PDF</a>
         <a class="button" href="{% url 'import_parts_xml' %}">Importar pecas</a>
-        <a class="button" href="{% url 'import_parts_pdf' %}">Importar pecas por PDF</a>
-        <a class="button primary" href="{% url 'part_create' %}">Nova peca</a>
+        <a class="button" href="{% url 'import_parts_pdf' %}">Importar PDF</a>
       </div>
     </details>
   </section>
