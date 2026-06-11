@@ -62,12 +62,8 @@ def import_nfe_xml(uploaded_file):
 
         try:
             imported = parse_product(product)
-            defaults = {key: value for key, value in imported.items() if key not in ('brand', 'code')}
-            part, created = Part.objects.update_or_create(
-                brand='',
-                code=imported['code'],
-                defaults=defaults,
-            )
+            defaults = {key: value for key, value in imported.items() if key not in ('brand', 'code', 'reference_code')}
+            part, created = update_or_create_xml_part(imported, defaults)
             if created:
                 result.created += 1
             else:
@@ -77,6 +73,43 @@ def import_nfe_xml(uploaded_file):
             result.errors.append(str(error))
 
     return result
+
+
+def update_or_create_xml_part(imported, defaults):
+    part = find_existing_xml_part(imported)
+    if part is None:
+        return Part.objects.update_or_create(
+            brand='',
+            code=imported['code'],
+            defaults=defaults,
+        )
+
+    part.brand = ''
+    part.code = imported['code']
+    for key, value in defaults.items():
+        setattr(part, key, value)
+    part.save()
+    return part, False
+
+
+def find_existing_xml_part(imported):
+    existing = Part.objects.filter(brand='', code=imported['code']).first()
+    if existing:
+        return existing
+
+    barcode = imported.get('barcode')
+    if barcode:
+        existing = Part.objects.filter(barcode=barcode).first()
+        if existing:
+            return existing
+
+    reference_code = imported.get('reference_code')
+    if reference_code:
+        existing = Part.objects.filter(brand='', code=reference_code).first()
+        if existing:
+            return existing
+
+    return None
 
 
 def import_parts_csv(uploaded_file):
@@ -159,20 +192,26 @@ def parse_csv_row(row):
 
 def parse_product(product):
     raw_description = text(product, 'xProd')
-    code, name = split_code_and_name(raw_description, text(product, 'cProd'))
-    category = infer_category(name)
-    supplier_code = text(product, 'cProd')
+    product_code = text(product, 'cProd').strip().upper()
+    reference_code, clean_description = split_code_and_name(raw_description, '')
+    name = clean_name(raw_description)
+    category = infer_category(clean_description or raw_description)
 
-    if not code or not name:
+    if not product_code or not name:
         raise ValueError(f'Produto ignorado por falta de codigo ou nome: {raw_description}')
 
-    notes = f'Importado de XML NF-e. Codigo fornecedor: {supplier_code}'
+    notes = 'Importado de XML NF-e.'
+    if reference_code:
+        notes += f' Referencia/modelo do produto: {reference_code}.'
+    if clean_description and clean_description != name:
+        notes += f' Descricao: {clean_description}.'
 
     return {
         'category': category.slug,
         'name': name,
         'brand': '',
-        'code': code,
+        'code': product_code,
+        'reference_code': reference_code,
         'barcode': normalize_barcode(text(product, 'cEAN')),
         'ncm': text(product, 'NCM'),
         'unit': text(product, 'uCom'),

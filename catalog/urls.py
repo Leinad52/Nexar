@@ -13,6 +13,7 @@ urlpatterns = [
     path('painel/categorias/<int:pk>/excluir/', views.category_delete, name='category_delete'),
     path('painel/modelos/', views.vehicle_list, name='vehicle_list'),
     path('painel/pecas/', views.part_list, name='part_list'),
+    path('painel/codigos/', views.product_code_search, name='product_code_search'),
     path('painel/compatibilidades/lote/', views.bulk_compatibility, name='bulk_compatibility'),
     path('painel/pecas/importar-xml/', views.import_parts_xml, name='import_parts_xml'),
     path('painel/pecas/importar-pdf/', views.import_parts_pdf, name='import_parts_pdf'),

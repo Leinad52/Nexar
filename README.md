@@ -216,6 +216,7 @@ O Nexar importa somente os itens da nota em `det > prod`, ignorando dados de emi
 
 Campos aproveitados:
 
+- `cProd`: codigo principal do produto, usado no cadastro da peca.
 - `xProd`: usado para separar codigo e nome da peca. Exemplo: `PD60-PASTILHA FREIO`.
 - `cEAN`: codigo de barras.
 - `NCM`: classificacao fiscal.
@@ -223,7 +224,7 @@ Campos aproveitados:
 - `qCom`: ultima quantidade comprada.
 - `vUnCom`: ultimo custo unitario.
 - `vProd`: ultimo total comprado.
-- `cProd`: guardado nas observacoes como codigo do fornecedor.
+O codigo que aparece antes do hifen em `xProd`, como `PD60` ou `LX4894`, fica guardado nas observacoes como referencia/modelo do produto. O codigo principal usado pelo Nexar passa a ser o `cProd`, como `124285`.
 
 Se uma peca com o mesmo codigo ja existir, ela sera atualizada. Se nao existir, sera criada.
 

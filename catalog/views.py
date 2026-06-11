@@ -379,6 +379,34 @@ def part_list(request):
 
 
 @staff_required
+def product_code_search(request):
+    query = request.GET.get('q', '').strip()
+    parts = Part.objects.all()
+    if query:
+        parts = parts.filter(
+            Q(category__icontains=query)
+            | Q(name__icontains=query)
+            | Q(brand__icontains=query)
+            | Q(code__icontains=query)
+            | Q(barcode__icontains=query)
+            | Q(ncm__icontains=query)
+            | Q(notes__icontains=query)
+        )
+    else:
+        parts = Part.objects.none()
+
+    return render(
+        request,
+        'catalog/product_code_search.html',
+        {
+            'parts': parts[:100],
+            'query': query,
+            'result_count': parts.count() if query else 0,
+        },
+    )
+
+
+@staff_required
 def vehicle_create(request):
     form = VehicleForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():

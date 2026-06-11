@@ -124,6 +124,15 @@ button:focus-visible,
   color: #fff;
 }
 
+.button.danger {
+  background: #b93030;
+  color: #fff;
+}
+
+.button.danger:hover {
+  background: #9f2525;
+}
+
 .button.ghost {
   background: #eef4f0;
   color: #17211c;
@@ -331,6 +340,13 @@ dd {
   margin-bottom: 18px;
 }
 
+.code-search {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
 .part-row,
 .table-row {
   padding: 16px;
@@ -365,6 +381,45 @@ dd {
 .code-box strong {
   display: block;
   margin-top: 4px;
+}
+
+.product-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.product-code-box {
+  min-width: 170px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #15221c;
+  color: #f7fbf8;
+  text-align: right;
+}
+
+.product-code-box span {
+  display: block;
+  color: #c9d8d0;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.product-code-box strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.18rem;
+}
+
+.code-results-note {
+  margin: 0 0 18px;
+}
+
+.product-code-row > div:first-child {
+  display: grid;
+  gap: 6px;
 }
 
 .dashboard-head {
@@ -610,6 +665,7 @@ dd {
   .admin-grid,
   .admin-grid.three-columns,
   .search-row,
+  .code-search,
   .list-search,
   dl {
     grid-template-columns: 1fr;
@@ -622,13 +678,16 @@ dd {
   .section-title,
   .part-row,
   .dashboard-head,
+  .product-code-row,
   .table-row.with-action {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .code-box {
+  .code-box,
+  .product-code-box {
     min-width: 0;
+    width: 100%;
     text-align: left;
   }
 

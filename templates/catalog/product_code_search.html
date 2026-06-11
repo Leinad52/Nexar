@@ -1,0 +1,59 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+  <section class="dashboard-head">
+    <div>
+      <span class="eyebrow">Consulta</span>
+      <h1>Codigos de produtos</h1>
+    </div>
+    <div class="button-row">
+      <a class="button ghost" href="{% url 'staff_dashboard' %}">Voltar</a>
+    </div>
+  </section>
+
+  <section class="panel">
+    <form class="code-search" method="get">
+      <input
+        type="search"
+        name="q"
+        value="{{ query }}"
+        placeholder="Pesquise por nome, marca, codigo, EAN, NCM ou categoria"
+        autocomplete="off"
+        autofocus
+      >
+      <button type="submit">Buscar codigo</button>
+      {% if query %}
+        <a class="button ghost" href="{% url 'product_code_search' %}">Limpar</a>
+      {% endif %}
+    </form>
+
+    {% if query %}
+      <p class="match-note code-results-note">{{ result_count }} resultado(s) para "{{ query }}".</p>
+      <div class="table-list">
+        {% for part in parts %}
+          <article class="table-row product-code-row">
+            <div>
+              <strong>{{ part.name }}</strong>
+              <span>{{ part.brand|default:'marca nao informada' }} | {{ part.category_label }}</span>
+              {% if part.barcode or part.ncm %}
+                <small>EAN: {{ part.barcode|default:'nao informado' }}</small>
+                <small>NCM: {{ part.ncm|default:'nao informado' }}</small>
+              {% endif %}
+            </div>
+            <div class="product-code-box">
+              <span>Codigo do produto</span>
+              <strong>{{ part.code }}</strong>
+            </div>
+          </article>
+        {% empty %}
+          <p class="empty">Nenhuma peca encontrada com essa busca.</p>
+        {% endfor %}
+      </div>
+      {% if result_count > 100 %}
+        <p class="match-note">Mostrando os 100 primeiros resultados. Refine a busca para encontrar a peca exata.</p>
+      {% endif %}
+    {% else %}
+      <p class="empty">Digite o nome ou alguma informacao da peca para encontrar o codigo cadastrado.</p>
+    {% endif %}
+  </section>
+{% endblock %}

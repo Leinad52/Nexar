@@ -295,7 +295,7 @@ def find_parts(part_codes):
     tokens = part_codes if isinstance(part_codes, list) else split_codes(part_codes)
     query = Q()
     for token in tokens:
-        query |= Q(code__iexact=token) | Q(barcode__iexact=token)
+        query |= Q(code__iexact=token) | Q(barcode__iexact=token) | Q(notes__icontains=token)
     return list(Part.objects.filter(query)) if query else []
 
 
